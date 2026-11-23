@@ -36,7 +36,7 @@
     font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111; text-decoration: none;
   }
   #why:hover { text-decoration: underline; }
-  body { animation: fade-in .7s ease both; transition: opacity .45s ease; }
+  body { animation: fade-in .3s ease-out both; transition: opacity .2s ease-in; }
   body.leaving { opacity: 0; }
   @keyframes fade-in { from { opacity: 0; } }
   #mode button:focus-visible { outline: 1px solid #111; outline-offset: 2px; }
@@ -56,7 +56,7 @@ for (const a of document.querySelectorAll("a[data-fade]")) a.addEventListener("c
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
   e.preventDefault();
   document.body.classList.add("leaving");
-  setTimeout(() => (location.href = a.href), 450);
+  setTimeout(() => (location.href = a.href), 200);
 });
 // Coming back via the browser's back button restores a faded-out page; undo that.
 addEventListener("pageshow", () => document.body.classList.remove("leaving"));
