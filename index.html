@@ -7,7 +7,9 @@
 <style>
   html, body { margin: 0; height: 100%; background: #fff; overflow: hidden; }
   body { display: flex; align-items: center; justify-content: center; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   pre {
+  font-weight: 400;
     margin: 0; color: #111; background: #fff; white-space: pre;
     font-family: Menlo, Monaco, "Courier New", monospace;
     line-height: 1; letter-spacing: 0;
@@ -16,11 +18,16 @@
   pre.night { color: #fff; background: #000; }
   #mode {
     position: fixed; left: 16px; bottom: 14px;
-    font: 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111;
+    font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111;
     user-select: none; -webkit-user-select: none;
   }
-  #mode button { all: unset; cursor: pointer; opacity: .3; }
-  #mode button[aria-pressed="true"] { opacity: 1; }
+  #mode button { all: unset; font: inherit; cursor: pointer; color: #bbb; }
+  #mode button[aria-pressed="true"] { color: #111; }
+  #hint {
+    position: fixed; left: 0; right: 0; top: calc(50% + 4.6vw);
+    text-align: center; font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111;
+    user-select: none; -webkit-user-select: none; pointer-events: none;
+  }
   #mode button:focus-visible { outline: 1px solid #111; outline-offset: 2px; }
   video, canvas { display: none; }
   canvas.debug { display: block; position: fixed; left: 0; top: 0; width: 100%; image-rendering: pixelated; }
@@ -28,6 +35,7 @@
 </head>
 <body>
 <pre id="out"></pre>
+<div id="hint">wave to be seen</div>
 <div id="mode"><button data-m="night">night</button>/<button data-m="day">day</button></div>
 <video id="cam" playsinline muted></video>
 <script type="module">
@@ -65,6 +73,7 @@ function avg(x, y, s = 4) {
 }
 const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const SCLERA = avg(118, 111, 3);
+const SKIN = avg(368, 60, 6);
 
 const ctrl = (A, B, mid) => [2 * mid[0] - (A[0] + B[0]) / 2, 2 * mid[1] - (A[1] + B[1]) / 2];
 function curve(ctx, A, c, B, start = true) {
@@ -204,8 +213,9 @@ function drawEye(e, s, slant, dx, dy, blink, pupil) {
   // upper lid
   ctx.beginPath(); curve(ctx, e.A, cu, e.B); curve(ctx, e.B, cLid, e.A, false); ctx.closePath();
   const lidG = ctx.createLinearGradient(0, up[1], 0, lidY);
-  lidG.addColorStop(0, "rgb(25,24,26)");
-  lidG.addColorStop(1, "rgb(55,50,52)");
+  lidG.addColorStop(0, rgb(SKIN.map(v => v * 0.55)));
+  lidG.addColorStop(0.75, rgb(SKIN.map(v => v * 0.45)));
+  lidG.addColorStop(1, "rgb(45,40,42)");
   ctx.fillStyle = lidG;
   ctx.fill();
   ctx.save();
@@ -220,6 +230,19 @@ function drawEye(e, s, slant, dx, dy, blink, pupil) {
   ctx.strokeStyle = "rgba(12,12,14,.95)";
   ctx.lineWidth = 7;
   ctx.beginPath(); curve(ctx, e.A, cLid, e.B); ctx.stroke();
+  // lashes hanging from a closing lid
+  if (close > 0.45) {
+    const k = (close - 0.45) / 0.55;
+    ctx.lineWidth = 2.2; ctx.lineCap = "round";
+    for (let i = 1; i < 18; i++) {
+      const u = i / 18, a = 1 - u;
+      const x = a * a * e.A[0] + 2 * a * u * cLid[0] + u * u * e.B[0];
+      const y = a * a * e.A[1] + 2 * a * u * cLid[1] + u * u * e.B[1];
+      const len = (7 + 6 * Math.sin(u * Math.PI)) * k;
+      const lean = (u - 0.5) * 6 * k;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + lean, y + len); ctx.stroke();
+    }
+  }
   ctx.lineWidth = 3; ctx.strokeStyle = "rgba(20,20,22,.8)";
   ctx.beginPath(); curve(ctx, e.A, cl, e.B); ctx.stroke();
 }
@@ -291,7 +314,7 @@ function render() {
 // ---- Tracking: your hand only (mouse stands in only if hand tracking can't start) ----
 let moved = 0;
 let you = { x: 0, y: 0 };
-let lastHand = -1e9, lastMouse = -1e9, handAppeared = -1e9, handTracking = false;
+let lastHand = -1e9, lastMouse = -1e9, handAppeared = -1e9, handTracking = false, noTracking = false;
 const video = document.getElementById("cam");
 
 function aimAt(nx, ny) {
@@ -307,13 +330,13 @@ addEventListener("pointermove", e => {
 });
 
 async function startCamera() {
-  if (!navigator.mediaDevices?.getUserMedia) { console.warn("[eyes] camera API unavailable (needs https or localhost)"); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { console.warn("[eyes] camera API unavailable (needs https or localhost)"); noTracking = true; return; }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" }, audio: false });
     video.srcObject = stream;
     await video.play();
     console.info("[eyes] camera on");
-  } catch (err) { console.warn("[eyes] camera blocked:", err); return; }
+  } catch (err) { console.warn("[eyes] camera blocked:", err); noTracking = true; return; }
 
   let handDet;
   try {
@@ -325,7 +348,7 @@ async function startCamera() {
     });
     handTracking = true;
     console.info("[eyes] tracking your hand");
-  } catch (err) { console.warn("[eyes] hand tracking failed to load:", err); return; }
+  } catch (err) { console.warn("[eyes] hand tracking failed to load:", err); noTracking = true; return; }
 
   let lastT = -1;
   const loop = () => {
@@ -357,9 +380,21 @@ let glance = null, nextGlance = performance.now() + rand(1500, 3500);
 let jitter = { x: 0, y: 0 }, nextJitter = 0;
 let nextBlink = performance.now() + 2500, blinkStart = -1;
 let expr = "neutral", nextExpr = 0, energy = 0;
+// Eyes start closed and open when they first see your hand; they doze off again if you leave.
+let awake = false, sleep = 1, wokeAt = -1e9;
+const loadedAt = performance.now();
 
 function frame(t) {
   const present = t - lastHand < 1500 || t - lastMouse < 2000;
+
+  if (!awake) {
+    const handNow = t - lastHand < 300;
+    const fallback = noTracking && t - loadedAt > 2500; // no camera / no hand model: open anyway
+    if (handNow || fallback) { awake = true; wokeAt = t; handAppeared = t; }
+  } else if (handTracking && t - lastHand > 12000 && t - wokeAt > 12000) {
+    awake = false; // you left: back to sleep
+  }
+  sleep += ((awake ? 0 : 1) - sleep) * (awake ? 0.07 : 0.03);
 
   // how much you're moving (decays)
   energy = energy * 0.93 + moved;
@@ -367,7 +402,8 @@ function frame(t) {
   const agitated = energy > 0.9;
 
   // expressions
-  if (t - handAppeared < 120 && expr !== "surprised") { expr = "surprised"; setExpr(expr); nextExpr = t + 900; }
+  if (!awake) { if (expr !== "neutral") { expr = "neutral"; setExpr(expr); } nextExpr = t + 600; }
+  else if (t - handAppeared < 120 && expr !== "surprised") { expr = "surprised"; setExpr(expr); nextExpr = t + 900; }
   else if (agitated) {
     if (expr !== "furious") { expr = "furious"; nextExpr = t + 1200; }
     setExpr("furious", 1 + Math.min(0.5, (energy - 0.9) * 0.3));
@@ -387,7 +423,7 @@ function frame(t) {
   if (!glance && t > nextGlance && !agitated) glance = { x: rand(-1, 1), y: rand(-0.7, 0.7), until: t + (present ? rand(250, 900) : rand(800, 2200)) };
   if (glance && (t > glance.until || agitated)) { glance = null; nextGlance = t + (present ? rand(1800, 4500) : rand(300, 1200)); }
   if (t > nextJitter) { jitter = { x: rand(-0.12, 0.12), y: rand(-0.12, 0.12) }; nextJitter = t + rand(250, 1100); }
-  const base = glance || you;
+  const base = awake ? (glance || you) : { x: 0, y: 0.4 };
   gaze.x += (base.x + jitter.x - gaze.x) * 0.3;
   gaze.y += (base.y + jitter.y - gaze.y) * 0.3;
 
@@ -402,8 +438,9 @@ function frame(t) {
 
   ctx.drawImage(img, 0, 0);
   drawBrows(p);
-  drawEye(EYES[0], p.L, p.slant, gaze.x * MAX_DX, gaze.y * MAX_DY, blink, pupil);
-  drawEye(EYES[1], p.R, p.slant, gaze.x * MAX_DX, gaze.y * MAX_DY, blink, pupil);
+  const shut = Math.max(blink, Math.min(1, sleep * 1.15));
+  drawEye(EYES[0], p.L, p.slant, gaze.x * MAX_DX, gaze.y * MAX_DY, shut, pupil);
+  drawEye(EYES[1], p.R, p.slant, gaze.x * MAX_DX, gaze.y * MAX_DY, shut, pupil);
   render();
   requestAnimationFrame(frame);
 }
