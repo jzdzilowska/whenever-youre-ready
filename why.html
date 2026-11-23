@@ -30,22 +30,20 @@
 <body>
 <!--
   Sources:
-  - GASA & Feedzai, Global State of Scams 2025 (46,000 adults, 42 markets): 23% lost money to a scam
-    in the past 12 months; 73% felt confident they could recognise a scam.
-    https://gasa.org/knowledge-base/blog/global-scams-on-the-rise-over-half-of-adults-worldwide-report-scam-encounters
-  - Flashpoint, Global Threat Intelligence Report, Midyear 2026 (1 Jan - 30 Jun 2026): ~1.7 billion
-    credentials and identity artifacts stolen by infostealers from 7.4 million infected hosts.
-    https://flashpoint.io/blog/flashpoint-global-threat-intelligence-report-midyear-2026/
-  - Verizon, 2026 Data Breach Investigations Report (22,000+ breaches, 145 countries): vulnerability
-    exploitation overtook credential abuse as the top initial access vector; only 26% of CISA Known
-    Exploited Vulnerabilities were fully remediated.
-    https://www.verizon.com/business/resources/reports/dbir/
-  - Internet Watch Foundation, Annual Data & Insights Report 2025: 45% of child sexual abuse videos
-    were 'self-generated'.
-    https://www.iwf.org.uk/annual-data-insights-report-2025/hashing-insights/self-generated-imagery
+  - Websites Need Your Permission Too: User Sentiment and Decision-Making on Web Permission Prompts
+    in Desktop Chrome (CHI 2024): camera prompts granted ~67-70% of the time on desktop Chrome.
+    https://dl.acm.org/doi/10.1145/3613904.3642252
+  - HTTP Archive, Web Almanac 2025, Third Parties: more than nine in ten pages use at least one third party.
+    https://almanac.httparchive.org/en/2025/third-parties
+  - Censys, Polyfill.io supply chain attack (July 2024): 380,000+ hosts referencing the malicious domain.
+    https://censys.com/july-2-polyfill-io-supply-chain-attack-digging-into-the-web-of-compromised-domains
+  - Clearview AI: company states 100+ billion facial images from public web sources (reported 2026);
+    fined EUR 30.5M by the Dutch Data Protection Authority (2024).
+    https://abc13.com/post/harris-county-pauses-consideration-facial-recognition-contract/20053932
+    https://www.securityweek.com/clearview-ai-fined-33-7-million-by-dutch-data-protection-watchdog-over-illegal-database-of-faces/
 -->
-<p>Across 42 countries, 23% of adults lost money to a scam in a single year, although 73% were confident they could recognise one. In the first half of 2026, information-stealing malware harvested approximately 1.7 billion credentials and identity records from 7.4 million devices. Among more than 22,000 breaches analysed in 145 countries, exploitation of software vulnerabilities was the leading point of entry, yet only 26% of vulnerabilities confirmed as actively exploited had been fully remediated. In 2025, 45% of the child sexual abuse videos assessed by the Internet Watch Foundation were self-generated: recorded by children on internet-connected cameras, typically under coercion.</p>
-<p>By enabling camera tracking, you granted an unverified page a live feed of your face and surroundings; it is processed locally and never stored, a claim your browser gave you no means to verify.</p>
+<p>On desktop, roughly two in three website requests for camera access are granted. More than nine in ten web pages execute code supplied by at least one third party, which runs with the same access the page itself was given. In 2024, a single compromised script server, polyfill.io, was found embedded in more than 380,000 web hosts, exposing their visitors to injected code. One company alone, Clearview AI, reports holding over 100 billion facial images collected from the public web, a database the Dutch regulator fined it &euro;30.5 million for building.</p>
+<p>By enabling camera tracking, you ran code from two servers you did not choose on a live image of your face; this page keeps nothing, which you have no way to verify.</p>
 <a class="go" href="https://github.com/Lissy93/personal-security-checklist">Whenever you're ready</a>
 <a id="home" href="index.html" data-fade>home</a>
 <script>
