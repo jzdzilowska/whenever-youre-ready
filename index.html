@@ -27,7 +27,14 @@
     position: fixed; left: 0; right: 0; top: calc(50% + 4.6vw);
     text-align: center; font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111;
     user-select: none; -webkit-user-select: none; pointer-events: none;
+    transition: opacity .6s;
   }
+  #hint.gone { opacity: 0; }
+  #why {
+    position: fixed; right: 16px; bottom: 14px;
+    font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111; text-decoration: none;
+  }
+  #why:hover { text-decoration: underline; }
   #mode button:focus-visible { outline: 1px solid #111; outline-offset: 2px; }
   video, canvas { display: none; }
   canvas.debug { display: block; position: fixed; left: 0; top: 0; width: 100%; image-rendering: pixelated; }
@@ -36,6 +43,7 @@
 <body>
 <pre id="out"></pre>
 <div id="hint">wave to be seen</div>
+<a id="why" href="why.html">why am i here?</a>
 <div id="mode"><button data-m="night">night</button>/<button data-m="day">day</button></div>
 <video id="cam" playsinline muted></video>
 <script type="module">
@@ -381,8 +389,9 @@ let jitter = { x: 0, y: 0 }, nextJitter = 0;
 let nextBlink = performance.now() + 2500, blinkStart = -1;
 let expr = "neutral", nextExpr = 0, energy = 0;
 // Eyes start closed and open when they first see your hand; they doze off again if you leave.
-let awake = false, sleep = 1, wokeAt = -1e9;
+let awake = false, sleep = 1, wokeAt = -1e9, upLook = 0;
 const loadedAt = performance.now();
+const hint = document.getElementById("hint");
 
 function frame(t) {
   const present = t - lastHand < 1500 || t - lastMouse < 2000;
@@ -395,6 +404,7 @@ function frame(t) {
     awake = false; // you left: back to sleep
   }
   sleep += ((awake ? 0 : 1) - sleep) * (awake ? 0.07 : 0.03);
+  hint.classList.toggle("gone", awake); // only ask while the eyes are closed
 
   // how much you're moving (decays)
   energy = energy * 0.93 + moved;
@@ -418,6 +428,15 @@ function frame(t) {
   for (const side of ["L", "R"]) for (const key of ["lift", "inner", "close", "widen", "low"]) p[side][key] = step(face[side + key]);
   p.slant = step(face.slant); p.furrow = step(face.furrow);
   if (expr === "furious") for (const side of ["L", "R"]) p[side].inner += rand(-1.2, 1.2); // trembling with rage
+  // the higher your hand, the wider they open
+  const up = awake && !glance ? Math.min(1, Math.max(0, -you.y)) : 0;
+  upLook += (up - upLook) * 0.12;
+  for (const side of ["L", "R"]) {
+    p[side].widen = Math.max(p[side].widen, 0) + upLook * 0.9;
+    p[side].close *= 1 - upLook * 0.85;
+    p[side].low *= 1 - upLook;
+    p[side].lift -= upLook * 9;
+  }
 
   // gaze: glances away and back, locked on when agitated
   if (!glance && t > nextGlance && !agitated) glance = { x: rand(-1, 1), y: rand(-0.7, 0.7), until: t + (present ? rand(250, 900) : rand(800, 2200)) };
