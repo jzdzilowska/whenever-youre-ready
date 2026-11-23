@@ -46,10 +46,14 @@
     opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility 0s linear .25s;
   }
   #about.open { opacity: 1; visibility: visible; transition: opacity .25s ease; }
+  /* a still of the viewer, drawn from the live camera into a canvas; it never leaves the device */
+  #shot { display: none; width: 96px; height: 72px; margin: 0 0 2.4em; background: #f2f2f2; }
+  #shot.on { display: block; }
   #about p { width: 100%; max-width: 64ch; margin: 0; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
   #about p + p { margin-top: 1.8em; }
   #about a { color: #111; hyphens: none; -webkit-hyphens: none; white-space: nowrap; }
   #about .go { margin-top: 3em; }
+  #about .nb { hyphens: none; -webkit-hyphens: none; white-space: nowrap; }
   /* selecting any text turns it hazy, as if seen through a fogged window */
   ::selection { color: transparent; text-shadow: 0 0 3px rgba(17,17,17,.85); background: #fff; }
   #close {
@@ -86,7 +90,8 @@
 -->
 <div id="about" role="dialog" aria-modal="true" aria-label="Why am I here?">
 <button id="close" aria-label="Close">x</button>
-<p>In the first half of 2026, information-stealing malware harvested approximately 1.7 billion credentials and identity records from 7.4 million devices. Over 90% of web pages run code from at least 1 third party, with the same access the page itself was given; in 2024, a single <a href="https://home.treasury.gov/news/press-releases/sb0149" target="_blank" rel="noopener">compromised script server</a>, polyfill.io, was found embedded in more than 380,000 web hosts. In 2025, researchers found over 40,000 cameras, including feeds from inside private homes, streaming to anyone with a browser and no password. Between December 2025 and March 2026, 181 websites that turn uploaded photos of real people into sexual imagery drew over 40 million unique visitors a month.</p>
+<canvas id="shot" width="192" height="144" aria-label="A still of you, taken just now"></canvas>
+<p>In the first half of 2026, information-stealing malware harvested approximately 1.7 billion credentials and identity records from 7.4 million devices. Over 90% of web pages run code from at least 1 third party, with the same access the page itself was given; in 2024, a single <a href="https://home.treasury.gov/news/press-releases/sb0149" target="_blank" rel="noopener">compromised script server</a>, <span class="nb">polyfill.io</span>, was found embedded in more than 380,000 web hosts. In 2025, researchers found over 40,000 cameras, including feeds from inside private homes, streaming to anyone with a browser and no password. Between December 2025 and March 2026, 181 websites that turn uploaded photos of real people into sexual imagery drew over 40 million unique visitors a month.</p>
 <p>By enabling camera tracking, you ran code from 2 servers you did not choose on a live image of your face; this page keeps nothing, which you have <u>no way to verify</u>.</p>
 <a class="go" href="https://github.com/Lissy93/personal-security-checklist">Whenever you're ready</a>
 </div>
@@ -95,7 +100,19 @@
 <script>
 // "why am i here?" opens a white sheet over the eyes; x (or Esc) closes it.
 const about = document.getElementById("about");
-function openAbout(e) { if (e) e.preventDefault(); about.classList.add("open"); document.getElementById("close").focus(); }
+// Take a still from the live camera at the moment the sheet opens. It is drawn straight into a
+// <canvas> in this page: no upload, no storage; it disappears when the tab closes.
+function takeShot() {
+  const cam = document.getElementById("cam"), shot = document.getElementById("shot");
+  if (!cam.srcObject || cam.readyState < 2 || !cam.videoWidth) { shot.classList.remove("on"); return; }
+  const c = shot.getContext("2d"), w = shot.width, h = shot.height;
+  const vw = cam.videoWidth, vh = cam.videoHeight, k = Math.max(w / vw, h / vh); // cover-crop
+  c.save(); c.translate(w, 0); c.scale(-1, 1); // mirrored, like a mirror
+  c.drawImage(cam, (w - vw * k) / 2, (h - vh * k) / 2, vw * k, vh * k);
+  c.restore();
+  shot.classList.add("on");
+}
+function openAbout(e) { if (e) e.preventDefault(); takeShot(); about.classList.add("open"); document.getElementById("close").focus(); }
 function closeAbout() { about.classList.remove("open"); document.getElementById("why").focus(); }
 document.getElementById("why").addEventListener("click", openAbout);
 document.getElementById("close").addEventListener("click", closeAbout);
