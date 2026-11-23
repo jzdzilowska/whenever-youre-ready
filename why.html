@@ -11,12 +11,20 @@
   body {
     min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 48px 16px; box-sizing: border-box;
-    font: 400 13px/1.7 Menlo, Monaco, "Courier New", monospace; color: #111;
+    font: 400 11px/1.75 Menlo, Monaco, "Courier New", monospace; color: #111;
   }
-  p { max-width: 58ch; margin: 0; text-align: center; }
+  body { animation: fade-in .7s ease both; transition: opacity .45s ease; }
+  body.leaving { opacity: 0; }
+  @keyframes fade-in { from { opacity: 0; } }
+  p { width: 100%; max-width: 56ch; margin: 0; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
   p + p { margin-top: 1.7em; }
   a { color: #111; }
   .go { margin-top: 3em; }
+  #home {
+    position: fixed; left: 16px; bottom: 14px;
+    font: 400 11px/1 Menlo, Monaco, "Courier New", monospace; color: #111; text-decoration: none;
+  }
+  #home:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -35,5 +43,17 @@
 <p>In 2024, Americans reported losing $16.6 billion to online crime, a 33% jump in a single year, and the FBI believes the real number is higher. That same year, more than 1.3 billion data breach notices went out, so your name, your address or your password is very likely already sitting in a stranger's database. Around 60% of breaches begin with a person: one click, one reused password, one moment of trust. Between October 2021 and March 2023, the FBI received more than 13,000 reports of children being sextorted for money online, and at least 20 of them took their own lives.</p>
 <p>By enabling camera tracking, you just let a website you know nothing about watch you, and you didn't think twice.</p>
 <a class="go" href="https://github.com/Lissy93/personal-security-checklist">Whenever you're ready</a>
+<a id="home" href="index.html" data-fade>home</a>
+<script>
+// Soft fade between the two pages: fade out, then navigate (the next page fades in).
+for (const a of document.querySelectorAll("a[data-fade]")) a.addEventListener("click", e => {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  e.preventDefault();
+  document.body.classList.add("leaving");
+  setTimeout(() => (location.href = a.href), 450);
+});
+// Coming back via the browser's back button restores a faded-out page; undo that.
+addEventListener("pageshow", () => document.body.classList.remove("leaving"));
+</script>
 </body>
 </html>
