@@ -50,6 +50,10 @@
   #about p + p { margin-top: 1.8em; }
   #about a { color: #111; hyphens: none; -webkit-hyphens: none; white-space: nowrap; }
   #about .go { margin-top: 3em; }
+  /* "no way to verify": seen through a hazy window, the haze drifting slowly */
+  #about u { display: inline-block; filter: blur(1px); opacity: .9; animation: haze 6s ease-in-out infinite alternate; }
+  @keyframes haze { from { filter: blur(.7px); opacity: .95; } to { filter: blur(1.4px); opacity: .8; } }
+  @media (prefers-reduced-motion: reduce) { #about u { animation: none; } }
   #close {
     all: unset; position: fixed; left: 16px; top: 12px; cursor: pointer;
     font: 400 14px/1 Menlo, Monaco, "Courier New", monospace; color: #111;
